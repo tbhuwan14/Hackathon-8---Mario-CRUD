@@ -40,10 +40,28 @@ app.get("/mario/:id", (req, res) => {
 });
 
 app.post("/mario", (req, res) => {
+  function isNullOrUndefined(prop) {
+    return prop === null || prop === undefined;
+  }
   async function postMarioInDB() {
-    const mario = new marioModel({ name: "Mario", weight: 40 });
-    const result = await mario.save();
-    res.send(result);
+    try {
+      if (
+        isNullOrUndefined(req.body.name) ||
+        isNullOrUndefined(req.body.weight)
+      ) {
+        return res
+          .status(400)
+          .send({ message: "either name or weight is missing" });
+      }
+      const mario = new marioModel({
+        name: req.body.name,
+        weight: req.body.weight,
+      });
+      const result = await mario.save();
+      res.status(201).send(result);
+    } catch (error) {
+      res.status(400).send({ message: error.message });
+    }
   }
   postMarioInDB();
 });
@@ -53,7 +71,10 @@ app.patch("/mario/:id", (req, res) => {
     try {
       const result = await marioModel.findOneAndUpdate(
         { _id: req.params.id },
-        { name: "Tribbuvan" },
+        {
+          name: req.body.name,
+          weight: req.body.weight,
+        },
         { new: true }
       );
       res.send(result);
@@ -68,7 +89,7 @@ app.delete("/mario/:id", (req, res) => {
   async function deleteMarioFromDB() {
     try {
       const result = await marioModel.findOneAndDelete({ _id: req.params.id });
-      res.send({ message: "character deleted" });
+      res.status(200).send({ message: "character deleted" });
     } catch (error) {
       res.status(400).send({ message: error.message });
     }
