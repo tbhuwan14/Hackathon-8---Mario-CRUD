@@ -40,7 +40,7 @@ app.post("/mario", async (req, res) => {
     res.status(400).send({ message: "either name or weight is missing" });
   } else {
     const newMarioDocument = new marioModel(newMario);
-    await new newMarioDocument.save();
+    await newMarioDocument.save();
     res.status(201).send(newMarioDocument);
   }
 });
