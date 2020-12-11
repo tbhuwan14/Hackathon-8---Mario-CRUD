@@ -37,9 +37,7 @@ function isNullOrUndefined(prop) {
 app.post("/mario", async (req, res) => {
   const newMario = req.body;
   if (isNullOrUndefined(newMario.name) || isNullOrUndefined(newMario.weight)) {
-    return res
-      .status(400)
-      .send({ message: "either name or weight is missing" });
+    res.status(400).send({ message: "either name or weight is missing" });
   } else {
     const newMarioDocument = new marioModel(newMario);
     await new newMarioDocument.save();
