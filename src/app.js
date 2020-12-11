@@ -18,83 +18,69 @@ app.use(bodyParser.json());
 // }
 // addMario();
 
-app.get("/mario", (req, res) => {
-  async function getMarioFromDB() {
-    const result = await marioModel.find();
-    console.log(result);
-    res.send(result);
-  }
-  getMarioFromDB();
+app.get("/mario", async (req, res) => {
+  res.send(await marioModel.find());
 });
 
-app.get("/mario/:id", (req, res) => {
-  async function getMarioFromDB() {
-    try {
-      const result = await marioModel.findOne({ _id: req.params.id });
-      res.send(result);
-    } catch (error) {
-      res.status(400).send({ message: error.message });
-    }
+app.get("/mario/:id", async (req, res) => {
+  try {
+    res.send(await marioModel.findById(req.params.id));
+  } catch (error) {
+    res.status(400).send({ message: error.message });
   }
-  getMarioFromDB();
 });
 
-app.post("/mario", (req, res) => {
-  function isNullOrUndefined(prop) {
-    return prop === null || prop === undefined;
+function isNullOrUndefined(prop) {
+  return prop === null || prop === undefined;
+}
+
+app.post("/mario", async (req, res) => {
+  const newMario = req.body;
+  if (isNullOrUndefined(newMario.name) || isNullOrUndefined(newMario.weight)) {
+    return res
+      .status(400)
+      .send({ message: "either name or weight is missing" });
+  } else {
+    const newMarioDocument = new marioModel(newMario);
+    await new newMarioDocument.save();
+    res.status(201).send(newMarioDocument);
   }
-  async function postMarioInDB() {
-    try {
-      if (
-        isNullOrUndefined(req.body.name) ||
-        isNullOrUndefined(req.body.weight)
-      ) {
-        return res
-          .status(400)
-          .send({ message: "either name or weight is missing" });
+});
+
+app.patch("/mario/:id", async (req, res) => {
+  const id = req.params.id;
+  const newMario = req.body;
+  try {
+    const marioInDB = await marioModel.findById(id);
+    if (
+      isNullOrUndefined(newMario.name) &&
+      isNullOrUndefined(newMario.weight)
+    ) {
+      res.status(400).send({ message: "Both Name And Weight Is Missing" });
+    } else {
+      if (!isNullOrUndefined(newMario.name)) {
+        marioInDB.name = newMario.name;
       }
-      const mario = new marioModel({
-        name: req.body.name,
-        weight: req.body.weight,
-      });
-      const result = await mario.save();
-      res.status(201).send(result);
-    } catch (error) {
-      res.status(400).send({ message: error.message });
+      if (!isNullOrUndefined(newMario.weight)) {
+        marioInDB.weight = newMario.weight;
+      }
+      await marioInDB.save();
+      res.send(marioInDB);
     }
+  } catch (error) {
+    res.status(400).send({ message: error.message });
   }
-  postMarioInDB();
 });
 
-app.patch("/mario/:id", (req, res) => {
-  async function patchMarioInDB() {
-    try {
-      const result = await marioModel.findOneAndUpdate(
-        { _id: req.params.id },
-        {
-          name: req.body.name,
-          weight: req.body.weight,
-        },
-        { new: true }
-      );
-      res.send(result);
-    } catch (error) {
-      res.status(400).send({ message: error.message });
-    }
+app.delete("/mario/:id", async (req, res) => {
+  const id = req.params.id;
+  try {
+    await marioModel.findById(id);
+    await marioModel.deleteOne({ _id: id });
+    res.send({ message: "character deleted" });
+  } catch (error) {
+    res.status(400).send({ message: error.message });
   }
-  patchMarioInDB();
-});
-
-app.delete("/mario/:id", (req, res) => {
-  async function deleteMarioFromDB() {
-    try {
-      const result = await marioModel.findOneAndDelete({ _id: req.params.id });
-      res.status(200).send({ message: "character deleted" });
-    } catch (error) {
-      res.status(400).send({ message: error.message });
-    }
-  }
-  deleteMarioFromDB();
 });
 
 module.exports = app;
